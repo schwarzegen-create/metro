@@ -4,41 +4,33 @@
     <meta charset="UTF-8">
     <title>Metronome Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    
+    <meta name="theme-color" content="#1a1816">
+
     <style>
         :root { --bg: #1a1816; --panel: #252220; --text: #e8d5c4; --accent: #d4a373; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; user-select: none; }
-        
-        /* Делаем интерфейс более "приложенческим" */
         .container { max-width: 500px; margin: auto; padding-top: env(safe-area-inset-top); }
-        
-        .top-controls { display: flex; height: 100px; background: var(--panel); margin-bottom: 20px; border-radius: 25px; border: 1px solid #35302d; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .top-controls { display: flex; height: 100px; background: var(--panel); margin-bottom: 20px; border-radius: 25px; border: 1px solid #35302d; overflow: hidden; }
         .tempo-zone { flex: 1; background: #2d2a27; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; cursor: ew-resize; touch-action: none; }
-        .tempo-val { font-size: 32px; color: var(--accent); }
-        .tempo-label { font-size: 10px; opacity: 0.5; letter-spacing: 2px; }
-        
-        .vol-zone { width: 90px; display: flex; align-items: center; justify-content: center; padding: 15px; background: #252220; }
+        .tempo-val { font-size: 36px; color: var(--accent); }
+        .vol-zone { width: 90px; display: flex; align-items: center; justify-content: center; padding: 15px; }
         input[type=range] { width: 100%; accent-color: var(--accent); }
-
         .add-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 25px; }
-        .btn-add { aspect-ratio: 1; border: none; border-radius: 18px; font-weight: bold; font-size: 20px; color: #1a1816; transition: 0.1s; }
-        .btn-add:active { transform: scale(0.9); }
-        
+        .btn-add { aspect-ratio: 1; border: none; border-radius: 18px; font-weight: bold; font-size: 20px; color: #1a1816; }
         #workspace { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
         .step { aspect-ratio: 1; border-radius: 20px; background: #2d2a27; border: 2px solid #3d3630; display: flex; align-items: center; justify-content: center; position: relative; }
         .step.hit { background: #3d3630; }
         .step.accent { background: var(--accent); color: #1a1816; border-color: var(--accent); }
         .step.active-playing { border-color: #fff; transform: scale(1.1); box-shadow: 0 0 20px var(--accent); }
         .step-num { font-weight: bold; font-size: 22px; opacity: 0.3; }
-        .del-step { position: absolute; top: -8px; right: -8px; width: 28px; height: 28px; background: #4a3b3b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 3px solid var(--bg); color: white; }
-
+        .del-step { position: absolute; top: -8px; right: -8px; width: 28px; height: 28px; background: #4a3b3b; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid var(--bg); color: white; }
         .play-footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 30px; padding-bottom: calc(30px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 60%); }
-        #playBtn { width: 100%; padding: 22px; border-radius: 25px; border: none; background: var(--accent); color: #1a1816; font-weight: bold; font-size: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
-        
+        #playBtn { width: 100%; padding: 22px; border-radius: 25px; border: none; background: var(--accent); color: #1a1816; font-weight: bold; font-size: 24px; }
         .c1{background:#faedcd} .c2{background:#fefae0} .c3{background:#e9edc9} .c4{background:#ccd5ae}
     </style>
 </head>
@@ -46,43 +38,36 @@
 
 <div class="container">
     <div class="top-controls">
-        <div class="tempo-zone" id="tempoZone">
-            <div class="tempo-val" id="tempoText">120</div>
-            <div class="tempo-label">BPM</div>
-        </div>
+        <div class="tempo-zone" id="tempoZone"><div class="tempo-val" id="tempoText">120</div></div>
         <div class="vol-zone"><input type="range" id="volSlider" min="0" max="1" step="0.1" value="0.8"></div>
     </div>
-
     <div class="add-btns">
         <button class="btn-add c1" onclick="addStep(1)">1</button>
         <button class="btn-add c2" onclick="addStep(2)">2</button>
         <button class="btn-add c3" onclick="addStep(3)">3</button>
         <button class="btn-add c4" onclick="addStep(4)">4</button>
     </div>
-
     <div id="workspace"></div>
 </div>
 
-<div class="play-footer">
-    <button id="playBtn">СТАРТ</button>
-</div>
+<div class="play-footer"><button id="playBtn">СТАРТ</button></div>
 
 <script>
-    let audioCtx = null;
-    let isPlaying = false;
-    let tempo = 120;
-    let currentStepIdx = 0;
-    let nextNoteTime = 0.0;
-    const lookahead = 25.0;
-    const scheduleAheadTime = 0.15;
-    let timerId = null;
-    let clickBuffer = null;
-    let accentBuffer = null;
+    // МАГИЯ ДЛЯ ХРОМА: Регистрация Service Worker прямо внутри HTML
+    if ('serviceWorker' in navigator) {
+        const sw = `
+            self.addEventListener('install', e => self.skipWaiting());
+            self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));
+        `;
+        const blob = new Blob([sw], {type: 'application/javascript'});
+        navigator.serviceWorker.register(URL.createObjectURL(blob));
+    }
 
-    // Слайдер темпа
+    let audioCtx = null, isPlaying = false, tempo = 120, currentStepIdx = 0, nextNoteTime = 0.0, timerId = null;
+    let clickBuffer = null, accentBuffer = null;
+
     let startX = 0, startTempo = 120;
-    const tZone = document.getElementById('tempoZone');
-    const tText = document.getElementById('tempoText');
+    const tZone = document.getElementById('tempoZone'), tText = document.getElementById('tempoText');
     tZone.addEventListener('touchstart', e => { startX = e.touches[0].clientX; startTempo = tempo; });
     tZone.addEventListener('touchmove', e => {
         let diff = (e.touches[0].clientX - startX) * 0.4;
@@ -91,9 +76,7 @@
     });
 
     function createWoodBuffer(freq) {
-        const rate = 44100;
-        const buf = audioCtx.createBuffer(1, rate * 0.1, rate);
-        const d = buf.getChannelData(0);
+        const rate = 44100, buf = audioCtx.createBuffer(1, rate * 0.1, rate), d = buf.getChannelData(0);
         for (let i = 0; i < d.length; i++) {
             const t = i / rate;
             d[i] = (Math.sin(2 * Math.PI * freq * t) + 0.3 * Math.sin(2 * Math.PI * freq * 1.5 * t)) * Math.exp(-t * 70);
@@ -103,31 +86,25 @@
     }
 
     function playNote(time, isAcc) {
-        const s = audioCtx.createBufferSource();
-        s.buffer = isAcc ? accentBuffer : clickBuffer;
-        const g = audioCtx.createGain();
-        const v = document.getElementById('volSlider').value;
+        const s = audioCtx.createBufferSource(); s.buffer = isAcc ? accentBuffer : clickBuffer;
+        const g = audioCtx.createGain(); const v = document.getElementById('volSlider').value;
         g.gain.setValueAtTime(isAcc ? v : v * 0.4, time);
-        s.connect(g); g.connect(audioCtx.destination);
-        s.start(time);
+        s.connect(g); g.connect(audioCtx.destination); s.start(time);
     }
 
     function scheduler() {
-        while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
+        while (nextNoteTime < audioCtx.currentTime + 0.15) {
             scheduleNote(currentStepIdx, nextNoteTime);
             advanceNote();
         }
-        timerId = setTimeout(scheduler, lookahead);
+        timerId = setTimeout(scheduler, 25);
     }
 
     function scheduleNote(idx, time) {
-        const steps = document.querySelectorAll('.step');
-        if (!steps.length) return;
+        const steps = document.querySelectorAll('.step'); if (!steps.length) return;
         const step = steps[idx % steps.length];
-
         if (step.classList.contains('accent')) playNote(time, true);
         else if (step.classList.contains('hit')) playNote(time, false);
-
         setTimeout(() => {
             if (!isPlaying) return;
             document.querySelectorAll('.step').forEach(s => s.classList.remove('active-playing'));
@@ -136,37 +113,28 @@
     }
 
     function advanceNote() {
-        const steps = document.querySelectorAll('.step');
-        const step = steps[currentStepIdx % steps.length];
-        nextNoteTime += (60.0 / tempo) / (step ? parseInt(step.dataset.div) : 1);
-        currentStepIdx++;
+        const steps = document.querySelectorAll('.step'); const step = steps[currentStepIdx % steps.length];
+        nextNoteTime += (60.0 / tempo) / (step ? parseInt(step.dataset.div) : 1); currentStepIdx++;
     }
 
     document.getElementById('playBtn').onclick = async () => {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            clickBuffer = createWoodBuffer(650);
-            accentBuffer = createWoodBuffer(950);
+            clickBuffer = createWoodBuffer(650); accentBuffer = createWoodBuffer(950);
         }
         if (audioCtx.state === 'suspended') await audioCtx.resume();
-
         isPlaying = !isPlaying;
         if (isPlaying) {
-            currentStepIdx = 0;
-            nextNoteTime = audioCtx.currentTime + 0.05;
-            document.getElementById('playBtn').innerText = "СТОП";
-            scheduler();
+            currentStepIdx = 0; nextNoteTime = audioCtx.currentTime + 0.05;
+            document.getElementById('playBtn').innerText = "СТОП"; scheduler();
         } else {
-            clearTimeout(timerId);
-            document.getElementById('playBtn').innerText = "СТАРТ";
+            clearTimeout(timerId); document.getElementById('playBtn').innerText = "СТАРТ";
             document.querySelectorAll('.step').forEach(s => s.classList.remove('active-playing'));
         }
     };
 
     function addStep(div) {
-        const s = document.createElement('div');
-        s.className = 'step hit';
-        s.dataset.div = div;
+        const s = document.createElement('div'); s.className = 'step hit'; s.dataset.div = div;
         s.innerHTML = `<div class="step-num">${div}</div><div class="del-step" onclick="event.stopPropagation(); this.parentElement.remove()">×</div>`;
         s.onclick = function() {
             if (this.classList.contains('hit')) { this.classList.remove('hit'); this.classList.add('accent'); }
