@@ -20,7 +20,6 @@
         .step { width: 54px; height: 70px; border-radius: 12px; background: #2d2a27; border: 2px solid #3d3630; position: relative; display: flex; align-items: center; justify-content: center; }
         .step.hit { background: #35302d; }
         .step.accent { background: var(--accent); color: #1a1816; border-color: var(--accent); }
-        /* Анимация active-playing удалена */
         .del-step { position: absolute; top: -5px; right: -5px; width: 22px; height: 22px; background: #603838; border-radius: 50%; color: white; font-size: 14px; text-align: center; line-height: 20px; border: 1px solid var(--bg); }
         .play-footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; background: var(--bg); }
         #playBtn { width: 100%; padding: 20px; border-radius: 15px; border: none; background: var(--accent); color: #1a1816; font-weight: bold; font-size: 20px; }
@@ -64,11 +63,11 @@
             if (!steps.length || !isPlaying) return;
             const step = steps[currentStepIdx % steps.length];
             
-            const s = audioCtx.createBufferSource();
             const isAcc = step.classList.contains('accent');
             const isHit = step.classList.contains('hit');
             
             if (isAcc || isHit) {
+                const s = audioCtx.createBufferSource();
                 s.buffer = isAcc ? accBuf : clickBuf;
                 const g = audioCtx.createGain();
                 g.gain.value = document.getElementById('volSlider').value * (isAcc ? 1 : 0.5);
