@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Метро</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#1a1816">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Метро%22,%22short_name%22:%22Метро%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22#1a1816%22,%22theme_color%22:%22#1a1816%22}">
+
+    <style>
+        :root { --bg: #1a1816; --panel: #252220; --text: #e8d5c4; --accent: #d4a373; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); text-align: center; margin: 0; padding: 10px; user-select: none; touch-action: manipulation; }
+        .container { max-width: 600px; margin: auto; padding-bottom: 160px; }
+        .top-controls { display: flex; height: 85px; background: var(--panel); margin-bottom: 20px; border-radius: 20px; border: 2px solid #35302d; overflow: hidden; }
+        
+        /* Зона темпа без индикатора */
+        .tempo-zone { flex: 1.2; background: radial-gradient(circle at center, #2d2a27, #252220); border-right: 2px solid #35302d; cursor: ew-resize; position: relative; }
+        .tempo-zone::after { content: 'TEMPO'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10px; letter-spacing: 3px; opacity: 0.2; }
+        
+        .volume-zone { flex: 1; padding: 0 15px; display: flex; align-items: center; }
+        input[type=range] { width: 100%; accent-color: var(--accent); }
+        .preset-section { background: var(--panel); padding: 12px; border-radius: 18px; margin-bottom: 20px; border: 1px solid #35302d; }
+        .preset-list { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0; margin-bottom: 8px; scrollbar-width: none; }
+        .preset-item { background: #35302d; padding: 6px 14px; border-radius: 10px; font-size: 13px; white-space: nowrap; cursor: pointer; }
+        .btn-save { background: var(--accent); color: #1a1816; border: none; width: 100%; padding: 10px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .add-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; }
+        .btn-add { width: 46px; height: 46px; border: none; border-radius: 50%; font-weight: bold; font-size: 18px; cursor: pointer; color: #1a1816; }
+        #workspace { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; min-height: 100px; }
+        .step { width: 56px; height: 72px; border-radius: 16px; background: #2d2a27; border: 2px solid #3d3630; position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.1s; }
+        .step.hit { background: #35302d; border-color: #453e3a; }
+        .step.accent { background: var(--accent); color: #1a1816; border-color: var(--accent); }
+        .step.active-playing { border-color: #fff; transform: scale(1.05); }
+        .step-num { font-size: 18px; font-weight: bold; opacity: 0.2; }
+        .del-step { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; background: #603838; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #1a1816; font-size: 12px; color: white; }
+        .play-footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 25px; box-sizing: border-box; background: linear-gradient(transparent, var(--bg) 50%); }
+        #playBtn { width: 100%; max-width: 500px; padding: 22px; border-radius: 20px; border: none; background: var(--accent); color: #1a1816; font-weight: bold; font-size: 20px; }
+        .btn-clear { background: #4a3b3b !important; color: var(--accent) !important; font-size: 22px; }
+        .c1 { background: #faedcd; } .c2 { background: #fefae0; } .c3 { background: #e9edc9; } .c4 { background: #ccd5ae; } .c5 { background: #d4a373; } .c6 { background: #b99470; } .c7 { background: #a98467; } .c8 { background: #adc178; } .c9 { background: #dde5b6; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="top-controls">
+        <div class="tempo-zone" id="tempoZone"></div>
+        <div class="volume-zone"><input type="range" id="volSlider" min="0" max="1" step="0.01" value="0.7"></div>
+    </div>
+    <div class="preset-section"><div class="preset-list" id="presetList"></div><button class="btn-save" onclick="saveCurrentPreset()">СОХРАНИТЬ В МЕТРО</button></div>
+    <div class="add-btns">
+        <button class="btn-add c1" onclick="addStep(1)">1</button><button class="btn-add c2" onclick="addStep(2)">2</button><button class="btn-add c3" onclick="addStep(3)">3</button><button class="btn-add c4" onclick="addStep(4)">4</button><button class="btn-add c5" onclick="addStep(5)">5</button><button class="btn-add c6" onclick="addStep(6)">6</button><button class="btn-add c7" onclick="addStep(7)">7</button><button class="btn-add c8" onclick="addStep(8)">8</button><button class="btn-add c9" onclick="addStep(9)">9</button><button class="btn-add btn-clear" onclick="clearAll()">×</button>
+    </div>
+    <div id="workspace"></div>
+</div>
+<div class="play-footer"><button id="playBtn">ПУСК</button></div>
+
+<script>
+    let audioCtx = null, isPlaying = false, nextNoteTime = 0.0, currentStepIdx = 0, tempo = 120, wakeLock = null;
+    const tZone = document.getElementById('tempoZone');
+
+    // Настройка чувствительности и предела
+    const updateTempo = (e) => {
+        if (e.buttons !== 1 && !e.touches) return;
+        const rect = tZone.getBoundingClientRect();
+        const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+        // Линейный диапазон: 40 - 564 BPM. Плавное изменение.
+        tempo = 40 + (Math.min(Math.max(x / rect.width, 0), 1) * 524);
+    };
+    tZone.onmousedown = updateTempo; tZone.onmousemove = updateTempo; tZone.ontouchmove = (e) => { e.preventDefault(); updateTempo(e); };
+
+    async function toggleWakeLock(on) {
+        try { if (on && 'wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+        else if (wakeLock) { await wakeLock.release(); wakeLock = null; }
+        } catch (err) {}
+    }
+
+    function addStep(div, state = 'hit') {
+        const step = document.createElement('div');
+        step.className = 'step ' + state;
+        step.dataset.div = div;
+        step.innerHTML = `<div class="step-num">${div}</div><div class="del-step" onclick="event.stopPropagation(); this.parentElement.remove()">×</div>`;
+        step.onclick = function() {
+            if (this.classList.contains('hit')) { this.classList.remove('hit'); this.classList.add('accent'); }
+            else if (this.classList.contains('accent')) { this.classList.remove('accent'); }
+            else { this.classList.add('hit'); }
+        };
+        document.getElementById('workspace').appendChild(step);
+    }
+
+    function clearAll() { document.getElementById('workspace').innerHTML = ''; }
+
+    function playS(time, isAcc) {
+        const vol = document.getElementById('volSlider').value;
+        const level = isAcc ? vol : vol * 0.45;
+        const o1 = audioCtx.createOscillator(), g1 = audioCtx.createGain();
+        o1.type = 'square'; o1.frequency.setValueAtTime(3200, time);
+        g1.gain.setValueAtTime(level * 1.2, time); g1.gain.exponentialRampToValueAtTime(0.001, time + 0.015);
+        o1.connect(g1); g1.connect(audioCtx.destination);
+        const o2 = audioCtx.createOscillator(), g2 = audioCtx.createGain();
+        o2.type = 'triangle'; const f = isAcc ? 1300 : 900;
+        o2.frequency.setValueAtTime(f, time);
+        g2.gain.setValueAtTime(level, time); g2.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+        o2.connect(g2); g2.connect(audioCtx.destination);
+        o1.start(time); o1.stop(time + 0.02); o2.start(time); o2.stop(time + 0.06);
+    }
+
+    function scheduler() {
+        while (nextNoteTime < audioCtx.currentTime + 0.1) {
+            const steps = document.querySelectorAll('.step');
+            if (!steps.length || !isPlaying) return;
+            const step = steps[currentStepIdx % steps.length];
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active-playing'));
+            step.classList.add('active-playing');
+            if (step.classList.contains('accent')) playS(nextNoteTime, true);
+            else if (step.classList.contains('hit')) playS(nextNoteTime, false);
+            nextNoteTime += (60.0 / tempo) / parseInt(step.dataset.div);
+            currentStepIdx++;
+        }
+        if (isPlaying) setTimeout(scheduler, 25);
+    }
+
+    document.getElementById('playBtn').onclick = async () => {
+        if (!audioCtx) audioCtx = new AudioContext();
+        isPlaying = !isPlaying;
+        if (isPlaying) {
+            await toggleWakeLock(true);
+            currentStepIdx = 0; nextNoteTime = audioCtx.currentTime + 0.05;
+            scheduler(); document.getElementById('playBtn').innerText = "СТОП";
+        } else {
+            await toggleWakeLock(false);
+            document.getElementById('playBtn').innerText = "ПУСК";
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active-playing'));
+        }
+    };
+
+    function saveCurrentPreset() {
+        const name = prompt("Название ритма:"); if (!name) return;
+        const steps = Array.from(document.querySelectorAll('.step')).map(s => ({
+            div: s.dataset.div, state: s.classList.contains('accent') ? 'accent' : (s.classList.contains('hit') ? 'hit' : '')
+        }));
+        const ps = JSON.parse(localStorage.getItem('metro_p') || '{}');
+        ps[name] = { tempo, steps }; localStorage.setItem('metro_p', JSON.stringify(ps));
+        renderPresets();
+    }
+
+    function renderPresets() {
+        const list = document.getElementById('presetList');
+        const ps = JSON.parse(localStorage.getItem('metro_p') || '{}');
+        list.innerHTML = '';
+        Object.keys(ps).forEach(name => {
+            const el = document.createElement('div'); el.className = 'preset-item'; el.innerText = name;
+            el.onclick = () => { clearAll(); tempo = ps[name].tempo; ps[name].steps.forEach(s => addStep(s.div, s.state)); };
+            el.oncontextmenu = (e) => { e.preventDefault(); delete ps[name]; localStorage.setItem('metro_p', JSON.stringify(ps)); renderPresets(); };
+            list.appendChild(el);
+        });
+    }
+    renderPresets();
+</script>
+</body>
+</html>
