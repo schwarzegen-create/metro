@@ -1,44 +1,35 @@
 <!DOCTYPE html><html lang="ru"><head>
     <meta charset="UTF-8">
-    <title>Метро Ultra-Fast</title>
+    <title>Метро Ultra-Stable</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
         :root { --bg: #1a1816; --panel: #252220; --text: #e8d5c4; --accent: #d4a373; }
         body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; user-select: none; touch-action: manipulation; }
         .container { max-width: 500px; margin: auto; padding-bottom: 120px; }
-        
-        /* Расширенная зона управления для точности на высоких BPM */
-        .top-controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
-        .tempo-wrapper { height: 80px; background: var(--panel); border-radius: 12px; border: 1px solid #35302d; position: relative; cursor: ew-resize; overflow: hidden; }
-        .tempo-wrapper::after { content: '40 — 800 BPM'; position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 10px; opacity: 0.3; letter-spacing: 2px; }
-        
-        #tempoCursor { position: absolute; top: 10%; left: 50%; width: 3px; height: 80%; background: var(--accent); border-radius: 2px; pointer-events: none; transform: translateX(-50%); }
-        
-        .volume-row { height: 50px; background: var(--panel); border-radius: 12px; border: 1px solid #35302d; display: flex; align-items: center; padding: 0 15px; }
+        .top-controls { display: flex; height: 60px; background: var(--panel); margin-bottom: 15px; border-radius: 12px; border: 1px solid #35302d; overflow: hidden; }
+        .tempo-zone { flex: 1.5; background: #2d2a27; position: relative; cursor: ew-resize; overflow: hidden; }
+        .tempo-zone::after { content: 'TEMPO'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10px; letter-spacing: 4px; opacity: 0.1; font-weight: bold; }
+        #tempoCursor { position: absolute; top: 15%; left: 50%; width: 4px; height: 70%; background: var(--accent); border-radius: 2px; pointer-events: none; transform: translateX(-50%); }
+        .volume-zone { flex: 1; padding: 0 10px; display: flex; align-items: center; border-left: 1px solid #35302d; }
         input[type=range] { width: 100%; height: 4px; accent-color: var(--accent); }
-        
         .preset-section { background: var(--panel); padding: 10px; border-radius: 12px; margin-bottom: 15px; }
         .preset-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
         .preset-item { background: #35302d; padding: 6px 14px; border-radius: 8px; font-size: 13px; white-space: nowrap; }
-        
         .btn-save { background: var(--accent); color: #1a1816; border: none; width: 100%; padding: 10px; border-radius: 8px; font-weight: bold; }
         .add-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; }
         .btn-add { width: 44px; height: 44px; border: none; border-radius: 50%; font-weight: bold; color: #1a1816; }
-        
         #workspace { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
         .step { width: 54px; height: 70px; border-radius: 12px; background: #2d2a27; border: 2px solid #3d3630; position: relative; display: flex; align-items: center; justify-content: center; }
         .step.hit { background: #35302d; }
         .step.accent { background: var(--accent); color: #1a1816; border-color: var(--accent); }
-        
         .del-step { position: absolute; top: -5px; right: -5px; width: 22px; height: 22px; background: #603838; border-radius: 50%; color: white; font-size: 14px; text-align: center; line-height: 20px; border: 1px solid var(--bg); }
         .play-footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; background: var(--bg); }
         #playBtn { width: 100%; padding: 20px; border-radius: 15px; border: none; background: var(--accent); color: #1a1816; font-weight: bold; font-size: 20px; }
-        
         .c1 { background: #faedcd; } .c2 { background: #fefae0; } .c3 { background: #e9edc9; } .c4 { background: #ccd5ae; } .c5 { background: #d4a373; } .c6 { background: #b99470; } .c7 { background: #a98467; } .c8 { background: #adc178; } .c9 { background: #dde5b6; }
     </style></head><body><div class="container">
     <div class="top-controls">
-        <div class="tempo-wrapper" id="tempoZone"><div id="tempoCursor"></div></div>
-        <div class="volume-row"><input type="range" id="volSlider" min="0" max="1" step="0.05" value="0.7"></div>
+        <div class="tempo-zone" id="tempoZone"><div id="tempoCursor"></div></div>
+        <div class="volume-zone"><input type="range" id="volSlider" min="0" max="1" step="0.05" value="0.7"></div>
     </div>
     <div class="preset-section"><div class="preset-list" id="presetList"></div><button class="btn-save" onclick="saveCurrentPreset()">СОХРАНИТЬ РИТМ</button></div>
     <div class="add-btns">
@@ -63,14 +54,14 @@
         if (e.buttons !== 1 && !e.touches) return;
         const rect = tZone.getBoundingClientRect(), clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const percent = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
-        tempo = Math.round(40 + percent * 760); // 40-800 BPM
+        tempo = Math.round(40 + percent * 240);
         tCursor.style.left = (percent * 100) + '%';
     };
     tZone.onmousedown = updateT; tZone.onmousemove = updateT;
     tZone.ontouchmove = (e) => { e.preventDefault(); updateT(e); };
 
     function scheduler() {
-        while (nextNoteTime < audioCtx.currentTime + 0.1) {
+        while (nextNoteTime < audioCtx.currentTime + 0.2) {
             const steps = document.querySelectorAll('.step');
             if (!steps.length || !isPlaying) return;
             const step = steps[currentStepIdx % steps.length];
@@ -86,14 +77,14 @@
             nextNoteTime += (60.0 / tempo) / parseInt(step.dataset.div);
             currentStepIdx++;
         }
-        timerID = setTimeout(scheduler, 25); // Чаще проверяем очередь на высоких скоростях
+        timerID = setTimeout(scheduler, 50);
     }
 
     document.getElementById('playBtn').onclick = async () => {
         if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); clickBuf = createWood(false); accBuf = createWood(true); }
         if (audioCtx.state === 'suspended') await audioCtx.resume();
         isPlaying = !isPlaying;
-        if (isPlaying) { currentStepIdx = 0; nextNoteTime = audioCtx.currentTime + 0.02; scheduler(); document.getElementById('playBtn').innerText = "СТОП"; }
+        if (isPlaying) { currentStepIdx = 0; nextNoteTime = audioCtx.currentTime + 0.05; scheduler(); document.getElementById('playBtn').innerText = "СТОП"; }
         else { clearTimeout(timerID); document.getElementById('playBtn').innerText = "ПУСК"; }
     };
 
@@ -117,7 +108,7 @@
         const list = document.getElementById('presetList'), ps = JSON.parse(localStorage.getItem('m_p_s') || '{}'); list.innerHTML = '';
         Object.keys(ps).forEach(n => {
             const el = document.createElement('div'); el.className = 'preset-item'; el.innerText = n;
-            el.onclick = () => { clearAll(); tempo = ps[n].tempo; ps[n].steps.forEach(s => addStep(s.div, s.state)); tCursor.style.left = ((tempo - 40) / 760 * 100) + '%'; };
+            el.onclick = () => { clearAll(); tempo = ps[n].tempo; ps[n].steps.forEach(s => addStep(s.div, s.state)); tCursor.style.left = ((tempo - 40) / 240 * 100) + '%'; };
             el.oncontextmenu = (e) => { e.preventDefault(); delete ps[n]; localStorage.setItem('m_p_s', JSON.stringify(ps)); renderPresets(); }; list.appendChild(el);
         });
     }
