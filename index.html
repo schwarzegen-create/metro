@@ -2,32 +2,42 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Ultra Metronome</title>
+    <title>Metronome Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    
     <style>
         :root { --bg: #1a1816; --panel: #252220; --text: #e8d5c4; --accent: #d4a373; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; user-select: none; }
-        .container { max-width: 500px; margin: auto; padding-bottom: 120px; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; user-select: none; }
         
-        .top-controls { display: flex; height: 80px; background: var(--panel); margin-bottom: 15px; border-radius: 20px; border: 1px solid #35302d; overflow: hidden; }
-        .tempo-zone { flex: 1; background: #2d2a27; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; cursor: ew-resize; touch-action: none; border-right: 1px solid #35302d; }
-        .vol-zone { width: 80px; display: flex; align-items: center; justify-content: center; padding: 10px; }
-        input[type=range] { writing-mode: bt-lr; width: 100%; accent-color: var(--accent); }
+        /* Делаем интерфейс более "приложенческим" */
+        .container { max-width: 500px; margin: auto; padding-top: env(safe-area-inset-top); }
+        
+        .top-controls { display: flex; height: 100px; background: var(--panel); margin-bottom: 20px; border-radius: 25px; border: 1px solid #35302d; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .tempo-zone { flex: 1; background: #2d2a27; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; cursor: ew-resize; touch-action: none; }
+        .tempo-val { font-size: 32px; color: var(--accent); }
+        .tempo-label { font-size: 10px; opacity: 0.5; letter-spacing: 2px; }
+        
+        .vol-zone { width: 90px; display: flex; align-items: center; justify-content: center; padding: 15px; background: #252220; }
+        input[type=range] { width: 100%; accent-color: var(--accent); }
 
-        .add-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .btn-add { padding: 15px 0; border: none; border-radius: 12px; font-weight: bold; font-size: 18px; color: #1a1816; }
+        .add-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 25px; }
+        .btn-add { aspect-ratio: 1; border: none; border-radius: 18px; font-weight: bold; font-size: 20px; color: #1a1816; transition: 0.1s; }
+        .btn-add:active { transform: scale(0.9); }
         
-        #workspace { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .step { aspect-ratio: 1; border-radius: 15px; background: #2d2a27; border: 2px solid #3d3630; display: flex; align-items: center; justify-content: center; position: relative; }
+        #workspace { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .step { aspect-ratio: 1; border-radius: 20px; background: #2d2a27; border: 2px solid #3d3630; display: flex; align-items: center; justify-content: center; position: relative; }
         .step.hit { background: #3d3630; }
         .step.accent { background: var(--accent); color: #1a1816; border-color: var(--accent); }
-        .step.active-playing { border-color: #fff; transform: scale(1.05); }
-        .step-num { font-weight: bold; font-size: 20px; opacity: 0.3; }
-        .del-step { position: absolute; top: -5px; right: -5px; width: 24px; height: 24px; background: #4a3b3b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid var(--bg); color: white; }
+        .step.active-playing { border-color: #fff; transform: scale(1.1); box-shadow: 0 0 20px var(--accent); }
+        .step-num { font-weight: bold; font-size: 22px; opacity: 0.3; }
+        .del-step { position: absolute; top: -8px; right: -8px; width: 28px; height: 28px; background: #4a3b3b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 3px solid var(--bg); color: white; }
 
-        .play-footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 20px; background: linear-gradient(transparent, var(--bg) 50%); }
-        #playBtn { width: 100%; padding: 20px; border-radius: 20px; border: none; background: var(--accent); color: #1a1816; font-weight: bold; font-size: 22px; }
+        .play-footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 30px; padding-bottom: calc(30px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 60%); }
+        #playBtn { width: 100%; padding: 22px; border-radius: 25px; border: none; background: var(--accent); color: #1a1816; font-weight: bold; font-size: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
         
         .c1{background:#faedcd} .c2{background:#fefae0} .c3{background:#e9edc9} .c4{background:#ccd5ae}
     </style>
@@ -36,7 +46,10 @@
 
 <div class="container">
     <div class="top-controls">
-        <div class="tempo-zone" id="tempoZone">120</div>
+        <div class="tempo-zone" id="tempoZone">
+            <div class="tempo-val" id="tempoText">120</div>
+            <div class="tempo-label">BPM</div>
+        </div>
         <div class="vol-zone"><input type="range" id="volSlider" min="0" max="1" step="0.1" value="0.8"></div>
     </div>
 
@@ -60,31 +73,31 @@
     let tempo = 120;
     let currentStepIdx = 0;
     let nextNoteTime = 0.0;
-    const lookahead = 25.0; // Как часто проверять (мс)
-    const scheduleAheadTime = 0.1; // На сколько планировать вперед (сек)
+    const lookahead = 25.0;
+    const scheduleAheadTime = 0.15;
     let timerId = null;
-
     let clickBuffer = null;
     let accentBuffer = null;
 
-    // Управление темпом свайпом
+    // Слайдер темпа
     let startX = 0, startTempo = 120;
     const tZone = document.getElementById('tempoZone');
+    const tText = document.getElementById('tempoText');
     tZone.addEventListener('touchstart', e => { startX = e.touches[0].clientX; startTempo = tempo; });
     tZone.addEventListener('touchmove', e => {
         let diff = (e.touches[0].clientX - startX) * 0.4;
         tempo = Math.round(Math.min(Math.max(startTempo + diff, 40), 280));
-        tZone.innerText = tempo;
+        tText.innerText = tempo;
     });
 
     function createWoodBuffer(freq) {
         const rate = 44100;
-        const buf = audioCtx.createBuffer(1, rate * 0.05, rate);
+        const buf = audioCtx.createBuffer(1, rate * 0.1, rate);
         const d = buf.getChannelData(0);
         for (let i = 0; i < d.length; i++) {
             const t = i / rate;
-            d[i] = Math.sin(2 * Math.PI * freq * t) * Math.exp(-t * 80);
-            if (i < 50) d[i] += (Math.random() * 2 - 1) * 0.5; // Щелчок
+            d[i] = (Math.sin(2 * Math.PI * freq * t) + 0.3 * Math.sin(2 * Math.PI * freq * 1.5 * t)) * Math.exp(-t * 70);
+            if (i < 100) d[i] += (Math.random() * 2 - 1) * 0.4;
         }
         return buf;
     }
@@ -112,11 +125,9 @@
         if (!steps.length) return;
         const step = steps[idx % steps.length];
 
-        // Звук
         if (step.classList.contains('accent')) playNote(time, true);
         else if (step.classList.contains('hit')) playNote(time, false);
 
-        // Визуал строго по времени аудио-контекста
         setTimeout(() => {
             if (!isPlaying) return;
             document.querySelectorAll('.step').forEach(s => s.classList.remove('active-playing'));
@@ -127,16 +138,15 @@
     function advanceNote() {
         const steps = document.querySelectorAll('.step');
         const step = steps[currentStepIdx % steps.length];
-        const secondsPerBeat = 60.0 / tempo;
-        nextNoteTime += secondsPerBeat / (step ? parseInt(step.dataset.div) : 1);
+        nextNoteTime += (60.0 / tempo) / (step ? parseInt(step.dataset.div) : 1);
         currentStepIdx++;
     }
 
     document.getElementById('playBtn').onclick = async () => {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            clickBuffer = createWoodBuffer(800);
-            accentBuffer = createWoodBuffer(1200);
+            clickBuffer = createWoodBuffer(650);
+            accentBuffer = createWoodBuffer(950);
         }
         if (audioCtx.state === 'suspended') await audioCtx.resume();
 
