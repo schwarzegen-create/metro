@@ -1,121 +1,100 @@
 <!DOCTYPE html><html lang="ru"><head>
     <meta charset="UTF-8">
-    <title>Метро</title>
+    <title>Метро Ultra-Stable</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#1a1816">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Метро%22,%22short_name%22:%22Метро%22,%22display%22:%22standalone%22,%22background_color%22:%22#1a1816%22}">
     <style>
         :root { --bg: #1a1816; --panel: #252220; --text: #e8d5c4; --accent: #d4a373; }
-        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); text-align: center; margin: 0; padding: 10px; user-select: none; touch-action: manipulation; }
-        .container { max-width: 600px; margin: auto; padding-bottom: 160px; }
-        .top-controls { display: flex; height: 85px; background: var(--panel); margin-bottom: 20px; border-radius: 20px; border: 2px solid #35302d; overflow: hidden; }
-        .tempo-zone { flex: 1.2; background: radial-gradient(circle at center, #2d2a27, #252220); border-right: 2px solid #35302d; cursor: ew-resize; position: relative; }
-        .tempo-zone::after { content: 'TEMPO'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10px; letter-spacing: 3px; opacity: 0.2; }
-        .volume-zone { flex: 1; padding: 0 15px; display: flex; align-items: center; }
-        input[type=range] { width: 100%; accent-color: var(--accent); }
-        .preset-section { background: var(--panel); padding: 12px; border-radius: 18px; margin-bottom: 20px; border: 1px solid #35302d; }
-        .preset-list { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0; margin-bottom: 8px; scrollbar-width: none; }
-        .preset-item { background: #35302d; padding: 6px 14px; border-radius: 10px; font-size: 13px; white-space: nowrap; cursor: pointer; }
-        .btn-save { background: var(--accent); color: #1a1816; border: none; width: 100%; padding: 10px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; user-select: none; touch-action: manipulation; }
+        .container { max-width: 500px; margin: auto; padding-bottom: 120px; }
+        .top-controls { display: flex; height: 70px; background: var(--panel); margin-bottom: 15px; border-radius: 12px; border: 1px solid #35302d; overflow: hidden; }
+        .tempo-zone { flex: 1.2; background: #2d2a27; position: relative; cursor: ew-resize; }
+        .volume-zone { flex: 1; padding: 0 10px; display: flex; align-items: center; }
+        input[type=range] { width: 100%; }
+        .preset-section { background: var(--panel); padding: 10px; border-radius: 12px; margin-bottom: 15px; }
+        .preset-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .preset-item { background: #35302d; padding: 6px 14px; border-radius: 8px; font-size: 13px; white-space: nowrap; }
+        .btn-save { background: var(--accent); color: #1a1816; border: none; width: 100%; padding: 10px; border-radius: 8px; font-weight: bold; }
         .add-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; }
-        .btn-add { width: 46px; height: 46px; border: none; border-radius: 50%; font-weight: bold; font-size: 18px; cursor: pointer; color: #1a1816; }
-        #workspace { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; min-height: 100px; }
-        .step { width: 56px; height: 72px; border-radius: 16px; background: #2d2a27; border: 2px solid #3d3630; position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.1s; }
-        .step.hit { background: #35302d; border-color: #453e3a; }
+        .btn-add { width: 44px; height: 44px; border: none; border-radius: 50%; font-weight: bold; color: #1a1816; }
+        #workspace { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .step { width: 54px; height: 70px; border-radius: 12px; background: #2d2a27; border: 2px solid #3d3630; position: relative; display: flex; align-items: center; justify-content: center; }
+        .step.hit { background: #35302d; }
         .step.accent { background: var(--accent); color: #1a1816; border-color: var(--accent); }
-        .step.active-playing { border-color: #fff; transform: scale(1.1); box-shadow: none; }
-        .step-num { font-size: 18px; font-weight: bold; opacity: 0.2; }
-        .del-step { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; background: #603838; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #1a1816; font-size: 12px; color: white; }
-        .play-footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 25px; box-sizing: border-box; background: linear-gradient(transparent, var(--bg) 50%); }
-        #playBtn { width: 100%; max-width: 500px; padding: 22px; border-radius: 20px; border: none; background: var(--accent); color: #1a1816; font-weight: bold; font-size: 20px; }
+        /* Анимация active-playing удалена */
+        .del-step { position: absolute; top: -5px; right: -5px; width: 22px; height: 22px; background: #603838; border-radius: 50%; color: white; font-size: 14px; text-align: center; line-height: 20px; border: 1px solid var(--bg); }
+        .play-footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 20px; box-sizing: border-box; background: var(--bg); }
+        #playBtn { width: 100%; padding: 20px; border-radius: 15px; border: none; background: var(--accent); color: #1a1816; font-weight: bold; font-size: 20px; }
         .c1 { background: #faedcd; } .c2 { background: #fefae0; } .c3 { background: #e9edc9; } .c4 { background: #ccd5ae; } .c5 { background: #d4a373; } .c6 { background: #b99470; } .c7 { background: #a98467; } .c8 { background: #adc178; } .c9 { background: #dde5b6; }
     </style></head><body><div class="container">
     <div class="top-controls">
         <div class="tempo-zone" id="tempoZone"></div>
-        <div class="volume-zone"><input type="range" id="volSlider" min="0" max="1" step="0.01" value="0.7"></div>
+        <div class="volume-zone"><input type="range" id="volSlider" min="0" max="1" step="0.05" value="0.7"></div>
     </div>
     <div class="preset-section"><div class="preset-list" id="presetList"></div><button class="btn-save" onclick="saveCurrentPreset()">СОХРАНИТЬ РИТМ</button></div>
     <div class="add-btns">
-        <button class="btn-add c1" onclick="addStep(1)">1</button><button class="btn-add c2" onclick="addStep(2)">2</button><button class="btn-add c3" onclick="addStep(3)">3</button><button class="btn-add c4" onclick="addStep(4)">4</button><button class="btn-add c5" onclick="addStep(5)">5</button><button class="btn-add c6" onclick="addStep(6)">6</button><button class="btn-add c7" onclick="addStep(7)">7</button><button class="btn-add c8" onclick="addStep(8)">8</button><button class="btn-add c9" onclick="addStep(9)">9</button><button class="btn-add btn-add c1" style="background:#4a3b3b;color:var(--accent)" onclick="clearAll()">×</button>
+        <button class="btn-add c1" onclick="addStep(1)">1</button><button class="btn-add c2" onclick="addStep(2)">2</button><button class="btn-add c3" onclick="addStep(3)">3</button><button class="btn-add c4" onclick="addStep(4)">4</button><button class="btn-add c5" onclick="addStep(5)">5</button><button class="btn-add c6" onclick="addStep(6)">6</button><button class="btn-add c7" onclick="addStep(7)">7</button><button class="btn-add c8" onclick="addStep(8)">8</button><button class="btn-add c9" onclick="addStep(9)">9</button><button class="btn-add" style="background:#4a3b3b;color:var(--accent)" onclick="clearAll()">×</button>
     </div>
     <div id="workspace"></div></div><div class="play-footer"><button id="playBtn">ПУСК</button></div><script>
-    if ('serviceWorker' in navigator) {
-        const sw = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`;
-        const blob = new Blob([sw], {type: 'application/javascript'});
-        navigator.serviceWorker.register(URL.createObjectURL(blob));
-    }
+    let audioCtx = null, isPlaying = false, nextNoteTime = 0.0, currentStepIdx = 0, tempo = 120, timerID = null;
+    let clickBuf = null, accBuf = null;
 
-    let audioCtx = null, isPlaying = false, nextNoteTime = 0.0, currentStepIdx = 0, tempo = 120, wakeLock = null;
-    let clickBuffer = null, accentBuffer = null;
-
-    const tZone = document.getElementById('tempoZone');
-    const updateTempo = (e) => {
-        if (e.buttons !== 1 && !e.touches) return;
-        const rect = tZone.getBoundingClientRect();
-        const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-        tempo = 40 + (Math.min(Math.max(x / rect.width, 0), 1) * 524);
-    };
-    tZone.onmousedown = updateTempo; tZone.onmousemove = updateTempo; tZone.ontouchmove = (e) => { e.preventDefault(); updateTempo(e); };
-
-    function createClickBuffer(isAcc) {
-        const rate = audioCtx.sampleRate;
-        const buf = audioCtx.createBuffer(1, rate * 0.1, rate);
-        const data = buf.getChannelData(0);
-        // Настройки "Плотного дерева"
-        const freq = isAcc ? 700 : 550;
-        const decay = 60;
-        const noiseMix = 0.2;
-        for (let i = 0; i < data.length; i++) {
+    function createWood(isAcc) {
+        const rate = 44100, buf = audioCtx.createBuffer(1, rate * 0.1, rate), d = buf.getChannelData(0);
+        const f = isAcc ? 700 : 550;
+        for (let i = 0; i < d.length; i++) {
             const t = i / rate;
-            const osc = Math.sin(2 * Math.PI * freq * t) + 0.4 * Math.sin(2 * Math.PI * freq * 1.5 * t);
-            const noise = (Math.random() * 2 - 1);
-            data[i] = (osc + noise * noiseMix * Math.exp(-t * 200)) * Math.exp(-t * decay);
+            d[i] = (Math.sin(2 * Math.PI * f * t) + (Math.random()*2-1)*0.1) * Math.exp(-t * 60);
         }
         return buf;
     }
 
-    function playS(time, isAcc) {
-        const source = audioCtx.createBufferSource();
-        source.buffer = isAcc ? accentBuffer : clickBuffer;
-        const gainNode = audioCtx.createGain();
-        const vol = document.getElementById('volSlider').value;
-        gainNode.gain.setValueAtTime(isAcc ? vol : vol * 0.5, time);
-        source.connect(gainNode); gainNode.connect(audioCtx.destination);
-        source.start(time);
-    }
+    const tZone = document.getElementById('tempoZone');
+    const updateT = (e) => {
+        if (e.buttons !== 1 && !e.touches) return;
+        const rect = tZone.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        tempo = Math.round(40 + (Math.min(Math.max(clientX - rect.left, 0), rect.width) / rect.width) * 200);
+    };
+    tZone.onmousedown = updateT; tZone.onmousemove = updateT;
+    tZone.ontouchmove = (e) => { e.preventDefault(); updateT(e); };
 
     function scheduler() {
-        while (nextNoteTime < audioCtx.currentTime + 0.1) {
+        while (nextNoteTime < audioCtx.currentTime + 0.2) {
             const steps = document.querySelectorAll('.step');
             if (!steps.length || !isPlaying) return;
             const step = steps[currentStepIdx % steps.length];
-            const allSteps = document.querySelectorAll('.step');
-            allSteps.forEach(s => s.classList.remove('active-playing'));
-            step.classList.add('active-playing');
-            if (step.classList.contains('accent')) playS(nextNoteTime, true);
-            else if (step.classList.contains('hit')) playS(nextNoteTime, false);
+            
+            const s = audioCtx.createBufferSource();
+            const isAcc = step.classList.contains('accent');
+            const isHit = step.classList.contains('hit');
+            
+            if (isAcc || isHit) {
+                s.buffer = isAcc ? accBuf : clickBuf;
+                const g = audioCtx.createGain();
+                g.gain.value = document.getElementById('volSlider').value * (isAcc ? 1 : 0.5);
+                s.connect(g); g.connect(audioCtx.destination);
+                s.start(nextNoteTime);
+            }
             nextNoteTime += (60.0 / tempo) / parseInt(step.dataset.div);
             currentStepIdx++;
         }
-        if (isPlaying) setTimeout(scheduler, 25);
+        timerID = setTimeout(scheduler, 50);
     }
 
     document.getElementById('playBtn').onclick = async () => {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            clickBuffer = createClickBuffer(false); accentBuffer = createClickBuffer(true);
+            clickBuf = createWood(false); accBuf = createWood(true);
         }
         if (audioCtx.state === 'suspended') await audioCtx.resume();
         isPlaying = !isPlaying;
         if (isPlaying) {
-            try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch(e){}
             currentStepIdx = 0; nextNoteTime = audioCtx.currentTime + 0.05;
-            scheduler(); document.getElementById('playBtn').innerText = "СТОП";
+            scheduler();
+            document.getElementById('playBtn').innerText = "СТОП";
         } else {
-            if (wakeLock) { wakeLock.release(); wakeLock = null; }
+            clearTimeout(timerID);
             document.getElementById('playBtn').innerText = "ПУСК";
-            document.querySelectorAll('.step').forEach(s => s.classList.remove('active-playing'));
         }
     };
 
@@ -123,11 +102,12 @@
         const step = document.createElement('div');
         step.className = 'step ' + state;
         step.dataset.div = div;
-        step.innerHTML = `<div class="step-num">${div}</div><div class="del-step" onclick="event.stopPropagation(); this.parentElement.remove()">×</div>`;
-        step.onclick = function() {
-            if (this.classList.contains('hit')) { this.classList.remove('hit'); this.classList.add('accent'); }
-            else if (this.classList.contains('accent')) { this.classList.remove('accent'); }
-            else { this.classList.add('hit'); }
+        step.innerHTML = `<b>${div}</b><div class="del-step">×</div>`;
+        step.querySelector('.del-step').onclick = (e) => { e.stopPropagation(); step.remove(); };
+        step.onclick = () => {
+            if (step.classList.contains('hit')) step.classList.replace('hit', 'accent');
+            else if (step.classList.contains('accent')) step.classList.remove('accent');
+            else step.classList.add('hit');
         };
         document.getElementById('workspace').appendChild(step);
     }
@@ -135,23 +115,22 @@
     function clearAll() { document.getElementById('workspace').innerHTML = ''; }
 
     function saveCurrentPreset() {
-        const name = prompt("Название ритма:"); if (!name) return;
+        const name = prompt("Имя ритма:"); if (!name) return;
         const steps = Array.from(document.querySelectorAll('.step')).map(s => ({
             div: s.dataset.div, state: s.classList.contains('accent') ? 'accent' : (s.classList.contains('hit') ? 'hit' : '')
         }));
-        const ps = JSON.parse(localStorage.getItem('metro_p') || '{}');
-        ps[name] = { tempo, steps }; localStorage.setItem('metro_p', JSON.stringify(ps));
+        const ps = JSON.parse(localStorage.getItem('m_p_s') || '{}');
+        ps[name] = { tempo, steps }; localStorage.setItem('m_p_s', JSON.stringify(ps));
         renderPresets();
     }
 
     function renderPresets() {
-        const list = document.getElementById('presetList');
-        const ps = JSON.parse(localStorage.getItem('metro_p') || '{}');
+        const list = document.getElementById('presetList'), ps = JSON.parse(localStorage.getItem('m_p_s') || '{}');
         list.innerHTML = '';
-        Object.keys(ps).forEach(name => {
-            const el = document.createElement('div'); el.className = 'preset-item'; el.innerText = name;
-            el.onclick = () => { clearAll(); tempo = ps[name].tempo; ps[name].steps.forEach(s => addStep(s.div, s.state)); };
-            el.oncontextmenu = (e) => { e.preventDefault(); delete ps[name]; localStorage.setItem('metro_p', JSON.stringify(ps)); renderPresets(); };
+        Object.keys(ps).forEach(n => {
+            const el = document.createElement('div'); el.className = 'preset-item'; el.innerText = n;
+            el.onclick = () => { clearAll(); tempo = ps[n].tempo; ps[n].steps.forEach(s => addStep(s.div, s.state)); };
+            el.oncontextmenu = (e) => { e.preventDefault(); delete ps[n]; localStorage.setItem('m_p_s', JSON.stringify(ps)); renderPresets(); };
             list.appendChild(el);
         });
     }
